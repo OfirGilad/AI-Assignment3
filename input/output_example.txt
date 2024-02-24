@@ -1,0 +1,18 @@
+SEASON:
+  P(low) = 0.1
+  P(medium) = 0.4
+  P(high) = 0.5
+
+VERTEX (1,0):
+  P(package|low) = 0.2
+  P(package|medium) = 0.4
+  P(package|high) = 0.6
+
+EDGE (1,0) (1,1)
+  P(blocked|no package (1,0), no package (1,1)) = 0.1
+  P(blocked|no package (1,0), package (1,1)) = 0.8
+  P(blocked|package (1,0), no package (1,1)) = 0.8
+  P(blocked|package (1,0), package (1,1)) = 0.96
+
+VERTEX (1,1):
+etc.
