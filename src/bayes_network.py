@@ -1,6 +1,8 @@
 import numpy as np
 from copy import deepcopy
 
+from node import Node
+
 
 class BayesNetwork:
     def __init__(self, environment_data: dict):
@@ -10,12 +12,15 @@ class BayesNetwork:
         self.special_edges = environment_data.get("special_edges", list())
         self.special_vertices = environment_data.get("special_vertices", list())
         self.leakage_probability = environment_data.get("leakage_probability", 0.0)
-        self.season = environment_data.get("season", {"low": 0.0, "medium": 0.0, "high": 0.0})
+        self.season = environment_data.get("season", dict())
 
         # Build state graph
         self.total_vertices = self.X * self.Y
         self.adjacency_matrix = None
         self._build_adjacency_matrix()
+
+        self.network_nodes = dict()
+        self._build_network()
 
     def coordinates_to_vertex_index(self, coords: list) -> int:
         row, col = coords
@@ -62,6 +67,41 @@ class BayesNetwork:
                     self.adjacency_matrix[bottom_neighbor, current_node] = 1
 
         self._apply_special_edges()
+
+    def _build_network(self):
+        season_node = Node(node_data=self.season)
+
+        vertices = list()
+        for vertex_data in self.special_vertices:
+            vertex_node = Node(node_data=vertex_data)
+            vertices.append(vertex_node)
+
+            # Add connections between vertices and season node
+            vertex_node.add_parent(season_node)
+            season_node.add_child(vertex_node)
+
+        edges = list()
+        for edge_data in self.special_edges:
+            edge_node = Node(node_data=edge_data)
+            edges.append(edge_node)
+
+            # Add connections between edges and vertices
+            for vertex_node in vertices:
+                if edge_node.node_data["from"] == vertex_node.node_data["at"]:
+                    vertex_node.add_child(edge_node)
+                    edge_node.add_parent(vertex_node)
+                elif edge_node.node_data["to"] == vertex_node.node_data["at"]:
+                    vertex_node.add_child(edge_node)
+                    edge_node.add_parent(vertex_node)
+                else:
+                    continue
+
+        self.network_nodes["season"] = season_node
+        self.network_nodes["vertices"] = vertices
+        self.network_nodes["edges"] = edges
+
+        print("Network Nodes Structure:")
+        print(season_node.network_tree_str())
 
     def convert_to_node_indices(self, current_vertex, next_vertex, mode: str):
         # The input vertices are list of coordinates

@@ -6,7 +6,7 @@ class Parser:
             "special_edges": list(),
             "special_vertices": list(),
             "leakage_probability": 0.0,
-            "season": {"low": 0.0, "medium": 0.0, "high": 0.0}
+            "season": dict()
         }
         self.options_dict = {
             "#X": self._handle_x,
@@ -26,7 +26,8 @@ class Parser:
 
     def _handle_b(self, line_data_args):
         edge = {
-            "type": "always blocked",
+            "type": "edge",
+            "sub_type": "always blocked",
             "from": [int(line_data_args[1]), int(line_data_args[2])],
             "to": [int(line_data_args[3]), int(line_data_args[4])],
         }
@@ -34,10 +35,12 @@ class Parser:
 
     def _handle_f(self, line_data_args):
         edge = {
-            "type": "fragile",
+            "type": "edge",
+            "sub_type": "fragile",
             "from": [int(line_data_args[1]), int(line_data_args[2])],
             "to": [int(line_data_args[3]), int(line_data_args[4])],
             "p": float(line_data_args[5]),
+            "q": 1 - float(line_data_args[5])
         }
         self.parsed_data["special_edges"].append(edge)
 
@@ -45,7 +48,8 @@ class Parser:
         vertex = {
             "type": "vertex",
             "at": [int(line_data_args[1]), int(line_data_args[2])],
-            "p": float(line_data_args[4])
+            "p": float(line_data_args[4]),
+            "q": 1 - float(line_data_args[4])
         }
         self.parsed_data["special_vertices"].append(vertex)
 
@@ -53,9 +57,13 @@ class Parser:
         self.parsed_data["leakage_probability"] = float(line_data_args[1])
 
     def _handle_s(self, line_data_args):
-        self.parsed_data["season"]["low"] = float(line_data_args[1])
-        self.parsed_data["season"]["medium"] = float(line_data_args[2])
-        self.parsed_data["season"]["high"] = float(line_data_args[3])
+        season = {
+            "type": "season",
+            "low": float(line_data_args[1]),
+            "medium": float(line_data_args[2]),
+            "high": float(line_data_args[3])
+        }
+        self.parsed_data["season"] = season
 
     def parse_data(self, data_filepath):
         with open(data_filepath) as data_file:
