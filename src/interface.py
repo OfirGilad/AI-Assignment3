@@ -25,12 +25,14 @@ class Interface:
         exit()
 
     def run(self):
-        """
-        The probabilistic reasoning 3 items:
-        1. What is the probability that each of the vertices contains packages?
-        2. What is the probability that each of the edges is blocked?
-        3. What is the distribution of the season variable?
-        """
+        items_information = (
+            "The probabilistic reasoning 3 items:\n" +
+            "1. What is the probability that each of the vertices contains packages?\n" +
+            "2. What is the probability that each of the edges is blocked?\n" +
+            "3. What is the distribution of the season variable?\n"
+        )
+        print(items_information)
+
         user_information = (
             "Choose operation from the following options:\n"
             "1. Reset evidence list to empty.\n"
