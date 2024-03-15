@@ -30,6 +30,8 @@ class Parser:
             "sub_type": "always blocked",
             "from": [int(line_data_args[1]), int(line_data_args[2])],
             "to": [int(line_data_args[3]), int(line_data_args[4])],
+            "p": 1.0,
+            "q": 0.0
         }
         self.parsed_data["special_edges"].append(edge)
 

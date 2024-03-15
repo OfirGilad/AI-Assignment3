@@ -1,5 +1,6 @@
 import numpy as np
 from copy import deepcopy
+import itertools
 
 from node import Node
 
@@ -69,9 +70,31 @@ class BayesNetwork:
         self._apply_special_edges()
 
     def _build_network(self):
+        vertices = list()
+        edges = list()
+
         season_node = Node(node_data=self.season)
 
-        vertices = list()
+        # Add dummy vertices to the network
+        all_vertices = list(list(vertex) for vertex in itertools.product(range(self.X), range(self.Y)))
+        packages_vertices = [vertex["at"] for vertex in self.special_vertices]
+        dummy_vertices = [vertex for vertex in all_vertices if vertex not in packages_vertices]
+        for vertex_coords in dummy_vertices:
+            dummy_vertex_data = {
+                "type": "vertex",
+                "sub_type": "dummy",
+                "at": vertex_coords,
+                "p": 0.0,
+                "q": 1.0
+            }
+            dummy_vertex_node = Node(node_data=dummy_vertex_data)
+            vertices.append(dummy_vertex_node)
+
+            # Add connections between vertices and season node
+            dummy_vertex_node.add_parent(season_node)
+            season_node.add_child(dummy_vertex_node)
+
+        # Add vertices to the network
         for vertex_data in self.special_vertices:
             vertex_node = Node(node_data=vertex_data)
             vertices.append(vertex_node)
@@ -80,7 +103,7 @@ class BayesNetwork:
             vertex_node.add_parent(season_node)
             season_node.add_child(vertex_node)
 
-        edges = list()
+        # Add edges to the network
         for edge_data in self.special_edges:
             edge_node = Node(node_data=edge_data)
             edges.append(edge_node)
@@ -102,6 +125,16 @@ class BayesNetwork:
 
         print("Network Nodes Structure:")
         print(season_node.network_tree_str())
+
+    def calculate_probs(self):
+        season_node = self.network_nodes["season"]
+        print(season_node.calculate_probs())
+
+        for vertex_node in self.network_nodes["vertices"]:
+            print(vertex_node.calculate_probs())
+
+        for edge_node in self.network_nodes["edges"]:
+            print(edge_node.calculate_probs())
 
     def convert_to_node_indices(self, current_vertex, next_vertex, mode: str):
         # The input vertices are list of coordinates
