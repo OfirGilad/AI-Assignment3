@@ -7,12 +7,14 @@ class Node:
         self.node_data = node_data
 
         self.options_dict = {
-            "season": self._season_probabs,
-            "vertex": self._vertex_probabs,
-            "edge": self._edge_probabs,
+            "season": self._season_probs,
+            "vertex": self._vertex_probs,
+            "edge": self._edge_probs,
         }
-        self.probabs = dict()
+        self.probs = dict()
         self.infers = dict()
+
+        self.calculate_given_probs()
 
     def type(self):
         return self.node_data["type"]
@@ -34,64 +36,61 @@ class Node:
             network_structure += child.network_tree_str(level + 1)
         return network_structure
 
-    def _season_probabs(self):
-        self.probabs = {
+    def _season_probs(self):
+        self.probs = {
             "low": self.node_data["low"],
             "medium": self.node_data["medium"],
             "high": self.node_data["high"]
         }
-        self.infers = self.probabs
 
-    def _vertex_probabs(self):
-        season_node = self.parents[0]
+        # self.infers = self.probs
 
-        self.probabs["package"] = {
+    def _vertex_probs(self):
+        self.probs["package"] = {
             "low": self.node_data["p"],
             "medium":  min(2.0 * self.node_data["p"], 1.0),
             "high": min(3.0 * self.node_data["p"], 1.0)
         }
-        self.probabs["no package"] = {
+        self.probs["no package"] = {
             "low": self.node_data["q"],
-            "medium": 1 - self.probabs["package"]["medium"],
-            "high": 1 - self.probabs["package"]["high"]
+            "medium": 1 - self.probs["package"]["medium"],
+            "high": 1 - self.probs["package"]["high"]
         }
 
-        self.infers["package"] = (
-            (self.probabs["package"]["low"] * season_node.infers["low"]) +
-            (self.probabs["package"]["medium"] * season_node.infers["medium"]) +
-            (self.probabs["package"]["high"] * season_node.infers["high"])
-        )
-        self.infers["no package"] = 1 - self.infers["package"]
+        # season_node = self.parents[0]
+        # self.infers["package"] = (
+        #     (self.probs["package"]["low"] * season_node.infers["low"]) +
+        #     (self.probs["package"]["medium"] * season_node.infers["medium"]) +
+        #     (self.probs["package"]["high"] * season_node.infers["high"])
+        # )
+        # self.infers["no package"] = 1 - self.infers["package"]
 
-    def _edge_probabs(self):
-        v0 = self.parents[0]
-        v1 = self.parents[1]
+    def _edge_probs(self):
+        if self.sub_type() == "always blocked":
+            leakage_value = 1.0
+        else:
+            leakage_value = self.node_data["leakage_probability"]
 
-        # TODO: Calculate the probabilities (need to find the problem)
-        self.probabs["blocked"] = {
+        self.probs["blocked"] = {
             "package": {
-                "package": 1 - (self.node_data["q"] * v0.infers["no package"] * v1.infers["no package"]),
-                "no package": 1 - (self.node_data["q"] * v0.infers["no package"] * v1.infers["package"])
+                "package": 1 - (self.node_data["q"] * self.node_data["q"]),
+                "no package": 1 - self.node_data["q"]
             },
             "no package": {
-                "package": 1 - (self.node_data["p"] * v0.infers["package"] * v1.infers["no package"]),
-                "no package": 1 - (self.node_data["p"] * v0.infers["package"] * v1.infers["package"]),
+                "package": 1 - self.node_data["q"],
+                "no package": leakage_value,
             }
         }
-        self.probabs["unblocked"] = {
+        self.probs["unblocked"] = {
             "package": {
-                "package": 1 - self.probabs["blocked"]["package"]["package"],
-                "no package": 1 - self.probabs["blocked"]["package"]["no package"]
+                "package": 1 - self.probs["blocked"]["package"]["package"],
+                "no package": 1 - self.probs["blocked"]["package"]["no package"]
             },
             "no package": {
-                "package": 1 - self.probabs["blocked"]["no package"]["package"],
-                "no package": 1 - self.probabs["blocked"]["no package"]["no package"]
+                "package": 1 - self.probs["blocked"]["no package"]["package"],
+                "no package": 1 - self.probs["blocked"]["no package"]["no package"]
             }
         }
 
-        # TODO: Calculate the inferences
-        self.infers["blocked"] = {}
-
-
-    def calculate_node_probabs(self):
+    def calculate_given_probs(self):
         self.options_dict[self.type()]()
