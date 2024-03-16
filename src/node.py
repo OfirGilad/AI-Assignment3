@@ -66,10 +66,12 @@ class Node:
     def _edge_probabs(self):
         v0 = self.parents[0]
         v1 = self.parents[1]
+
+        # TODO: Calculate the probabilities (need to find the problem)
         self.probabs["blocked"] = {
             "package": {
-                "package": 1 - (self.node_data["p"] * v0.infers["no package"] * v1.infers["no package"]),
-                "no package": 1 - (self.node_data["p"] * v0.infers["no package"] * v1.infers["package"])
+                "package": 1 - (self.node_data["q"] * v0.infers["no package"] * v1.infers["no package"]),
+                "no package": 1 - (self.node_data["q"] * v0.infers["no package"] * v1.infers["package"])
             },
             "no package": {
                 "package": 1 - (self.node_data["p"] * v0.infers["package"] * v1.infers["no package"]),
@@ -87,6 +89,9 @@ class Node:
             }
         }
 
-    def calculate_probs(self):
+        # TODO: Calculate the inferences
+        self.infers["blocked"] = {}
+
+
+    def calculate_node_probabs(self):
         self.options_dict[self.type()]()
-        return self.probabs

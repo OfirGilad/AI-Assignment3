@@ -18,7 +18,8 @@ class Interface:
         print("TBD")
 
     def _probabilistic_reasoning(self):
-        self.bayes_network.calculate_probs()
+        result = self.bayes_network.calculate_network_probabs()
+        print(result)
 
     @staticmethod
     def _quit():

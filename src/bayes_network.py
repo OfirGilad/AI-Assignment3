@@ -126,15 +126,52 @@ class BayesNetwork:
         print("Network Nodes Structure:")
         print(season_node.network_tree_str())
 
-    def calculate_probs(self):
+    def calculate_network_probabs(self):
+        network_probabs_str = ""
+
         season_node = self.network_nodes["season"]
-        print(season_node.calculate_probs())
+        season_node.calculate_node_probabs()
+
+        # Add season node probabs to the string
+        network_probabs_str += (
+            "SEASON: \n"
+            f"  P(low) = {season_node.probabs['low']}\n"
+            f"  P(medium) = {season_node.probabs['medium']}\n"
+            f"  P(high) = {season_node.probabs['high']}\n"
+            "\n"
+        )
 
         for vertex_node in self.network_nodes["vertices"]:
-            print(vertex_node.calculate_probs())
+            vertex_node.calculate_node_probabs()
+            if vertex_node.sub_type() == "dummy":
+                continue
+
+            # Add vertex node probabs to the string
+            coords = f"({vertex_node.node_data['at'][0]},{vertex_node.node_data['at'][1]})"
+            network_probabs_str += (
+                f"VERTEX {coords}: \n"
+                f"  P(package|low) = {vertex_node.probabs['package']['low']}\n"
+                f"  P(package|medium) = {vertex_node.probabs['package']['medium']}\n"
+                f"  P(package|high) = {vertex_node.probabs['package']['high']}\n"
+                "\n"
+            )
 
         for edge_node in self.network_nodes["edges"]:
-            print(edge_node.calculate_probs())
+            edge_node.calculate_node_probabs()
+            coords1 = f"({edge_node.node_data['from'][0]},{edge_node.node_data['from'][1]})"
+            coords2 = f"({edge_node.node_data['to'][0]},{edge_node.node_data['to'][1]})"
+
+            # Add edge node probabs to the string
+            network_probabs_str += (
+                f"EDGE {coords1} {coords2}: \n"
+                f"  P(blocked|no package {coords1}, no package {coords2}) = {edge_node.probabs['blocked']['no package']['no package']}\n"
+                f"  P(blocked|no package {coords1}, package {coords2}) = {edge_node.probabs['blocked']['no package']['package']}\n"
+                f"  P(blocked|package {coords1}, no package {coords2}) = {edge_node.probabs['blocked']['package']['no package']}\n"
+                f"  P(blocked|package {coords1}, package {coords2}) = {edge_node.probabs['blocked']['package']['package']}\n"
+                "\n"
+            )
+
+        return network_probabs_str
 
     def convert_to_node_indices(self, current_vertex, next_vertex, mode: str):
         # The input vertices are list of coordinates
