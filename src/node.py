@@ -12,6 +12,7 @@ class Node:
             "edge": self._edge_probabs,
         }
         self.probabs = dict()
+        self.infers = dict()
 
     def type(self):
         return self.node_data["type"]
@@ -39,78 +40,51 @@ class Node:
             "medium": self.node_data["medium"],
             "high": self.node_data["high"]
         }
+        self.infers = self.probabs
 
     def _vertex_probabs(self):
         season_node = self.parents[0]
-        self.probabs = {
-            "package": {
-                "low": self.node_data["p"] * season_node.probabs["low"],
-                "medium": self.node_data["p"] * season_node.probabs["medium"],
-                "high": self.node_data["p"] * season_node.probabs["high"]
-            },
-            "no package": {
-                "low": self.node_data["q"] * season_node.probabs["low"],
-                "medium": self.node_data["q"] * season_node.probabs["medium"],
-                "high": self.node_data["q"] * season_node.probabs["high"]
-            }
+
+        self.probabs["package"] = {
+            "low": self.node_data["p"],
+            "medium":  min(2.0 * self.node_data["p"], 1.0),
+            "high": min(3.0 * self.node_data["p"], 1.0)
         }
+        self.probabs["no package"] = {
+            "low": self.node_data["q"],
+            "medium": 1 - self.probabs["package"]["medium"],
+            "high": 1 - self.probabs["package"]["high"]
+        }
+
+        self.infers["package"] = (
+            (self.probabs["package"]["low"] * season_node.infers["low"]) +
+            (self.probabs["package"]["medium"] * season_node.infers["medium"]) +
+            (self.probabs["package"]["high"] * season_node.infers["high"])
+        )
+        self.infers["no package"] = 1 - self.infers["package"]
 
     def _edge_probabs(self):
         v0 = self.parents[0]
         v1 = self.parents[1]
-        self.probabs = {
-            "blocked": {
-                "package": {
-                    "package": {
-                        "low": self.node_data["p"] * (v0.probabs["package"]["low"] + v1.probabs["package"]["low"]),
-                        "medium": self.node_data["p"] * (v0.probabs["package"]["medium"] + v1.probabs["package"]["medium"]),
-                        "high": self.node_data["p"] * (v0.probabs["package"]["high"] + v1.probabs["package"]["high"]),
-                    },
-                    "no package": {
-                        "low": self.node_data["p"] * (v0.probabs["package"]["low"] + v1.probabs["no package"]["low"]),
-                        "medium": self.node_data["p"] * (v0.probabs["package"]["medium"] + v1.probabs["no package"]["medium"]),
-                        "high": self.node_data["p"] * (v0.probabs["package"]["high"] + v1.probabs["no package"]["high"]),
-                    }
-                },
-                "no package": {
-                    "package": {
-                        "low": self.node_data["p"] * (v0.probabs["no package"]["low"] + v1.probabs["package"]["low"]),
-                        "medium": self.node_data["p"] * (v0.probabs["no package"]["medium"] + v1.probabs["package"]["medium"]),
-                        "high": self.node_data["p"] * (v0.probabs["no package"]["high"] + v1.probabs["package"]["high"]),
-                    },
-                    "no package": {
-                        "low": self.node_data["p"] * (v0.probabs["no package"]["low"] + v1.probabs["no package"]["low"]),
-                        "medium": self.node_data["p"] * (v0.probabs["no package"]["medium"] + v1.probabs["no package"]["medium"]),
-                        "high": self.node_data["p"] * (v0.probabs["no package"]["high"] + v1.probabs["no package"]["high"]),
-                    }
-                }
+        self.probabs["blocked"] = {
+            "package": {
+                "package": 1 - (self.node_data["p"] * v0.infers["no package"] * v1.infers["no package"]),
+                "no package": 1 - (self.node_data["p"] * v0.infers["no package"] * v1.infers["package"])
             },
-            "unblocked": {
-                "package": {
-                    "package": {
-                        "low": self.node_data["q"] * (v0.probabs["package"]["low"] + v1.probabs["package"]["low"]),
-                        "medium": self.node_data["q"] * (v0.probabs["package"]["medium"] + v1.probabs["package"]["medium"]),
-                        "high": self.node_data["q"] * (v0.probabs["package"]["high"] + v1.probabs["package"]["high"]),
-                    },
-                    "no package": {
-                        "low": self.node_data["q"] * (v0.probabs["package"]["low"] + v1.probabs["no package"]["low"]),
-                        "medium": self.node_data["q"] * (v0.probabs["package"]["medium"] + v1.probabs["no package"]["medium"]),
-                        "high": self.node_data["q"] * (v0.probabs["package"]["high"] + v1.probabs["no package"]["high"]),
-                    }
-                },
-                "no package": {
-                    "package": {
-                        "low": self.node_data["q"] * (v0.probabs["no package"]["low"] + v1.probabs["package"]["low"]),
-                        "medium": self.node_data["q"] * (v0.probabs["no package"]["medium"] + v1.probabs["package"]["medium"]),
-                        "high": self.node_data["q"] * (v0.probabs["no package"]["high"] + v1.probabs["package"]["high"]),
-                    },
-                    "no package": {
-                        "low": self.node_data["q"] * (v0.probabs["no package"]["low"] + v1.probabs["no package"]["low"]),
-                        "medium": self.node_data["q"] * (v0.probabs["no package"]["medium"] + v1.probabs["no package"]["medium"]),
-                        "high": self.node_data["q"] * (v0.probabs["no package"]["high"] + v1.probabs["no package"]["high"]),
-                    }
-                }
+            "no package": {
+                "package": 1 - (self.node_data["p"] * v0.infers["package"] * v1.infers["no package"]),
+                "no package": 1 - (self.node_data["p"] * v0.infers["package"] * v1.infers["package"]),
+            }
+        }
+        self.probabs["unblocked"] = {
+            "package": {
+                "package": 1 - self.probabs["blocked"]["package"]["package"],
+                "no package": 1 - self.probabs["blocked"]["package"]["no package"]
             },
+            "no package": {
+                "package": 1 - self.probabs["blocked"]["no package"]["package"],
+                "no package": 1 - self.probabs["blocked"]["no package"]["no package"]
+            }
         }
 
     def calculate_probs(self):
