@@ -16,6 +16,7 @@ class BayesNetwork:
 
         # Build bayes network
         self.network_nodes = dict()
+        self.evidence_dict = dict()
         self._build_network()
 
     def _build_network(self):
@@ -23,6 +24,10 @@ class BayesNetwork:
         edges = list()
 
         season_node = Node(node_data=self.season)
+
+        # Build evidence dict
+        node_type = season_node.node_data["type"]
+        self.evidence_dict[node_type] = None
 
         # Add dummy vertices to the network
         all_vertices = list(list(vertex) for vertex in itertools.product(range(self.X), range(self.Y)))
@@ -52,11 +57,21 @@ class BayesNetwork:
             vertex_node.add_parent(season_node)
             season_node.add_child(vertex_node)
 
+            # Build evidence dict
+            coords = str(tuple(vertex_node.node_data["at"])).replace(" ", "")
+            self.evidence_dict[coords] = None
+
         # Add edges to the network
         for edge_data in self.special_edges:
             edge_data["leakage_probability"] = self.leakage_probability
             edge_node = Node(node_data=edge_data)
             edges.append(edge_node)
+
+            # Build evidence dict
+            coords1 = str(tuple(edge_node.node_data["from"])).replace(" ", "")
+            coords2 = str(tuple(edge_node.node_data["to"])).replace(" ", "")
+            edge_coords = f"{coords1} {coords2}"
+            self.evidence_dict[edge_coords] = None
 
             # Add connections between edges and vertices
             for vertex_node in vertices:
@@ -118,6 +133,9 @@ class BayesNetwork:
             )
 
         return network_structure_str
+
+    def get_evidence_dict(self):
+        return deepcopy(self.evidence_dict)
 
     def clone_bayes_network(self):
         environment_data = {
