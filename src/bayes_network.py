@@ -26,8 +26,10 @@ class BayesNetwork:
         season_node = Node(node_data=self.season)
 
         # Build evidence dict
-        node_type = season_node.node_data["type"]
-        self.evidence_dict[node_type] = None
+        self.evidence_dict[season_node.node_data["identifier"]] = {
+            "evidence": None,
+            "ref": season_node
+        }
 
         # Add dummy vertices to the network
         all_vertices = list(list(vertex) for vertex in itertools.product(range(self.X), range(self.Y)))
@@ -58,8 +60,10 @@ class BayesNetwork:
             season_node.add_child(vertex_node)
 
             # Build evidence dict
-            coords = str(tuple(vertex_node.node_data["at"])).replace(" ", "")
-            self.evidence_dict[coords] = None
+            self.evidence_dict[vertex_node.node_data["identifier"]] = {
+                "evidence": None,
+                "ref": vertex_node
+            }
 
         # Add edges to the network
         for edge_data in self.special_edges:
@@ -68,10 +72,10 @@ class BayesNetwork:
             edges.append(edge_node)
 
             # Build evidence dict
-            coords1 = str(tuple(edge_node.node_data["from"])).replace(" ", "")
-            coords2 = str(tuple(edge_node.node_data["to"])).replace(" ", "")
-            edge_coords = f"{coords1} {coords2}"
-            self.evidence_dict[edge_coords] = None
+            self.evidence_dict[edge_node.node_data["identifier"]] = {
+                "evidence": None,
+                "ref": edge_node
+            }
 
             # Add connections between edges and vertices
             for vertex_node in vertices:
@@ -89,8 +93,8 @@ class BayesNetwork:
         self.network_nodes["edges"] = edges
 
         # TODO: Remove this print before submission
-        print("Network Nodes Structure:")
-        print(season_node.network_tree_str())
+        # print("Network Nodes Structure:")
+        # print(season_node.network_tree_str())
 
     def bayes_network_structure(self):
         season_node = self.network_nodes["season"]
@@ -109,7 +113,7 @@ class BayesNetwork:
                 continue
 
             # Add vertex node probs to the string
-            coords = f"({vertex_node.node_data['at'][0]},{vertex_node.node_data['at'][1]})"
+            coords = vertex_node.node_data["identifier"]
             network_structure_str += (
                 f"VERTEX {coords}: \n"
                 f"  P(package|low) = {vertex_node.probs['package']['low']}\n"
@@ -119,8 +123,7 @@ class BayesNetwork:
             )
 
         for edge_node in self.network_nodes["edges"]:
-            coords1 = f"({edge_node.node_data['from'][0]},{edge_node.node_data['from'][1]})"
-            coords2 = f"({edge_node.node_data['to'][0]},{edge_node.node_data['to'][1]})"
+            coords1, coords2 = edge_node.node_data["identifier"].split(" ")
 
             # Add edge node probs to the string
             network_structure_str += (
@@ -136,6 +139,45 @@ class BayesNetwork:
 
     def get_evidence_dict(self):
         return deepcopy(self.evidence_dict)
+
+    def probabilistic_reasoning(self, evidence_dict: dict):
+        self.evidence_dict = evidence_dict
+
+        # Handle season evidence
+        season_node = self.network_nodes["season"]
+        season_identifier = season_node.node_data["identifier"]
+        evidence = self.evidence_dict[season_identifier]["evidence"]
+        if evidence is not None:
+            if evidence == "Low":
+                season_node.infers = {
+                    "low": 1.0,
+                    "medium": 0.0,
+                    "high": 0.0
+                }
+            elif evidence == "Medium":
+                season_node.infers = {
+                    "low": 0.0,
+                    "medium": 1.0,
+                    "high": 0.0
+                }
+            elif evidence == "High":
+                season_node.infers = {
+                    "low": 0.0,
+                    "medium": 0.0,
+                    "high": 1.0
+                }
+        else:
+            season_node.calculate_infers()
+
+        network_infers_str = (
+            "SEASON: \n"
+            f"  P(low) = {season_node.infers['low']}\n"
+            f"  P(medium) = {season_node.infers['medium']}\n"
+            f"  P(high) = {season_node.infers['high']}\n"
+            "\n"
+        )
+
+        return network_infers_str
 
     def clone_bayes_network(self):
         environment_data = {

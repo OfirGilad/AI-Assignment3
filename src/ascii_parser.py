@@ -31,7 +31,9 @@ class Parser:
             "from": [int(line_data_args[1]), int(line_data_args[2])],
             "to": [int(line_data_args[3]), int(line_data_args[4])],
             "p": 1.0,
-            "q": 0.0
+            "q": 0.0,
+            "identifier": f"({int(line_data_args[1])},{int(line_data_args[2])}) "
+                          f"({int(line_data_args[3])},{int(line_data_args[4])})"
         }
         self.parsed_data["special_edges"].append(edge)
 
@@ -42,7 +44,9 @@ class Parser:
             "from": [int(line_data_args[1]), int(line_data_args[2])],
             "to": [int(line_data_args[3]), int(line_data_args[4])],
             "p": float(line_data_args[5]),
-            "q": 1 - float(line_data_args[5])
+            "q": 1 - float(line_data_args[5]),
+            "identifier": f"({int(line_data_args[1])},{int(line_data_args[2])}) "
+                          f"({int(line_data_args[3])},{int(line_data_args[4])})"
         }
         self.parsed_data["special_edges"].append(edge)
 
@@ -51,7 +55,8 @@ class Parser:
             "type": "vertex",
             "at": [int(line_data_args[1]), int(line_data_args[2])],
             "p": float(line_data_args[4]),
-            "q": 1 - float(line_data_args[4])
+            "q": 1 - float(line_data_args[4]),
+            "identifier": f"({int(line_data_args[1])},{int(line_data_args[2])})"
         }
         self.parsed_data["special_vertices"].append(vertex)
 
@@ -63,7 +68,8 @@ class Parser:
             "type": "season",
             "low": float(line_data_args[1]),
             "medium": float(line_data_args[2]),
-            "high": float(line_data_args[3])
+            "high": float(line_data_args[3]),
+            "identifier": "season"
         }
         self.parsed_data["season"] = season
 
