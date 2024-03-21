@@ -41,7 +41,8 @@ class BayesNetwork:
                 "sub_type": "dummy",
                 "at": vertex_coords,
                 "p": 0.0,
-                "q": 1.0
+                "q": 1.0,
+                "identifier": f"({vertex_coords[0]},{vertex_coords[1]})"
             }
             dummy_vertex_node = Node(node_data=dummy_vertex_data)
             vertices.append(dummy_vertex_node)
@@ -123,9 +124,8 @@ class BayesNetwork:
             )
 
         for edge_node in self.network_nodes["edges"]:
-            coords1, coords2 = edge_node.node_data["identifier"].split(" ")
-
             # Add edge node probs to the string
+            coords1, coords2 = edge_node.node_data["identifier"].split(" ")
             network_structure_str += (
                 f"EDGE {coords1} {coords2}: \n"
                 f"  P(blocked|no package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['no package']['no package']}\n"
@@ -140,35 +140,29 @@ class BayesNetwork:
     def get_evidence_dict(self):
         return deepcopy(self.evidence_dict)
 
+    def _update_nodes_given_probs(self):
+        for evidence in self.evidence_dict.values():
+            node = evidence["ref"]
+            if node.type() == "season":
+                node.node_data["low"] = 1.0 if evidence["evidence"] == "Low" else 0.0
+                node.node_data["medium"] = 1.0 if evidence["evidence"] == "Medium" else 0.0
+                node.node_data["high"] = 1.0 if evidence["evidence"] == "High" else 0.0
+            elif node.type() == "vertex":
+                node.node_data["p"] = 1.0 if evidence["evidence"] == "Package" else 0.0
+                node.node_data["q"] = 1.0 if evidence["evidence"] == "No Package" else 0.0
+            elif node.type() == "edge":
+                node.node_data["p"] = 1.0 if evidence["evidence"] == "Blockage" else 0.0
+                node.node_data["q"] = 1.0 if evidence["evidence"] == "No Blockage" else 0.0
+            else:
+                continue
+            node.calculate_given_probs()
+
     def probabilistic_reasoning(self, evidence_dict: dict):
         self.evidence_dict = evidence_dict
+        self._update_nodes_given_probs()
 
-        # Handle season evidence
         season_node = self.network_nodes["season"]
-        season_identifier = season_node.node_data["identifier"]
-        evidence = self.evidence_dict[season_identifier]["evidence"]
-        if evidence is not None:
-            if evidence == "Low":
-                season_node.infers = {
-                    "low": 1.0,
-                    "medium": 0.0,
-                    "high": 0.0
-                }
-            elif evidence == "Medium":
-                season_node.infers = {
-                    "low": 0.0,
-                    "medium": 1.0,
-                    "high": 0.0
-                }
-            elif evidence == "High":
-                season_node.infers = {
-                    "low": 0.0,
-                    "medium": 0.0,
-                    "high": 1.0
-                }
-        else:
-            season_node.calculate_infers()
-
+        season_node.calculate_infers()
         network_infers_str = (
             "SEASON: \n"
             f"  P(low) = {season_node.infers['low']}\n"
@@ -176,6 +170,29 @@ class BayesNetwork:
             f"  P(high) = {season_node.infers['high']}\n"
             "\n"
         )
+
+        for vertex_node in self.network_nodes["vertices"]:
+            vertex_node.calculate_infers()
+            if vertex_node.sub_type() == "dummy":
+                continue
+
+            coords = vertex_node.node_data["identifier"]
+            network_infers_str += (
+                f"VERTEX {coords}: \n"
+                f"  P(package) = {vertex_node.infers['package']}\n"
+                f"  P(no package) = {vertex_node.infers['no package']}\n"
+                "\n"
+            )
+
+        for edge_node in self.network_nodes["edges"]:
+            edge_node.calculate_infers()
+            coords1, coords2 = edge_node.node_data["identifier"].split(" ")
+            network_infers_str += (
+                f"EDGE {coords1} {coords2}: \n"
+                f"  P(blocked) = {edge_node.infers['blocked']}\n"
+                f"  P(no blocked) = {edge_node.infers['unblocked']}\n"
+                "\n"
+            )
 
         return network_infers_str
 
