@@ -190,7 +190,7 @@ class BayesNetwork:
             network_infers_str += (
                 f"EDGE {coords1} {coords2}: \n"
                 f"  P(blocked) = {edge_node.infers['blocked']}\n"
-                f"  P(no blocked) = {edge_node.infers['unblocked']}\n"
+                f"  P(unblocked) = {edge_node.infers['unblocked']}\n"
                 "\n"
             )
 
