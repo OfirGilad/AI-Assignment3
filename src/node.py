@@ -77,7 +77,7 @@ class Node:
         return self.infers
 
     def _edge_probs(self):
-        if self.sub_type() == "always blocked":
+        if self.node_data["p"] == 1.0:
             leakage_value = 1.0
         else:
             leakage_value = self.node_data["leakage_probability"]
