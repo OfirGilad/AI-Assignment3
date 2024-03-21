@@ -6,10 +6,15 @@ class Node:
         self.children = list()
         self.node_data = node_data
 
-        self.options_dict = {
+        self.probs_options_dict = {
             "season": self._season_probs,
             "vertex": self._vertex_probs,
             "edge": self._edge_probs,
+        }
+        self.infers_options_dict = {
+            "season": self._season_infers,
+            "vertex": self._vertex_infers,
+            "edge": self._edge_infers
         }
         self.probs = dict()
         self.infers = dict()
@@ -42,8 +47,11 @@ class Node:
             "medium": self.node_data["medium"],
             "high": self.node_data["high"]
         }
+        return self.probs
 
-        # self.infers = self.probs
+    def _season_infers(self):
+        self.infers = self.probs
+        return self.infers
 
     def _vertex_probs(self):
         self.probs["package"] = {
@@ -56,14 +64,17 @@ class Node:
             "medium": 1 - self.probs["package"]["medium"],
             "high": 1 - self.probs["package"]["high"]
         }
+        return self.probs
 
-        # season_node = self.parents[0]
-        # self.infers["package"] = (
-        #     (self.probs["package"]["low"] * season_node.infers["low"]) +
-        #     (self.probs["package"]["medium"] * season_node.infers["medium"]) +
-        #     (self.probs["package"]["high"] * season_node.infers["high"])
-        # )
-        # self.infers["no package"] = 1 - self.infers["package"]
+    def _vertex_infers(self):
+        season_node = self.parents[0]
+        self.infers["package"] = (
+            (self.probs["package"]["low"] * season_node.infers["low"]) +
+            (self.probs["package"]["medium"] * season_node.infers["medium"]) +
+            (self.probs["package"]["high"] * season_node.infers["high"])
+        )
+        self.infers["no package"] = 1 - self.infers["package"]
+        return self.infers
 
     def _edge_probs(self):
         if self.sub_type() == "always blocked":
@@ -91,6 +102,22 @@ class Node:
                 "no package": 1 - self.probs["blocked"]["no package"]["no package"]
             }
         }
+        return self.probs
+
+    def _edge_infers(self):
+        from_vertex_node = self.parents[0]
+        to_vertex_node = self.parents[1]
+
+        self.infers["blocked"] = (
+            (self.probs["blocked"]["package"]["package"] * from_vertex_node.infers["package"] * to_vertex_node.infers["package"]) +
+            (self.probs["blocked"]["package"]["no package"] * from_vertex_node.infers["package"] * to_vertex_node.infers["no package"]) +
+            (self.probs["blocked"]["no package"]["package"] * from_vertex_node.infers["no package"] * to_vertex_node.infers["package"]) +
+            (self.probs["blocked"]["no package"]["no package"] * from_vertex_node.infers["no package"] * to_vertex_node.infers["no package"])
+        )
+        self.infers["unblocked"] = 1 - self.infers["blocked"]
 
     def calculate_given_probs(self):
-        self.options_dict[self.type()]()
+        self.probs_options_dict[self.type()]()
+
+    def calculate_infers(self):
+        self.infers_options_dict[self.type()]()
