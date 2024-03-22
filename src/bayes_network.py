@@ -142,6 +142,8 @@ class BayesNetwork:
 
     def _update_nodes_given_probs(self):
         for evidence in self.evidence_dict.values():
+            if evidence["evidence"] is None:
+                continue
             node = evidence["ref"]
             if node.type() == "season":
                 node.node_data["low"] = 1.0 if evidence["evidence"] == "Low" else 0.0
