@@ -26,10 +26,7 @@ class BayesNetwork:
         season_node = Node(node_data=self.season)
 
         # Build evidence dict
-        self.evidence_dict[season_node.node_data["identifier"]] = {
-            "evidence": None,
-            "ref": season_node
-        }
+        self.evidence_dict[season_node.node_data["identifier"]] = None
 
         # Add dummy vertices to the network
         all_vertices = list(list(vertex) for vertex in itertools.product(range(self.X), range(self.Y)))
@@ -61,10 +58,7 @@ class BayesNetwork:
             season_node.add_child(vertex_node)
 
             # Build evidence dict
-            self.evidence_dict[vertex_node.node_data["identifier"]] = {
-                "evidence": None,
-                "ref": vertex_node
-            }
+            self.evidence_dict[vertex_node.node_data["identifier"]] = None
 
         # Add edges to the network
         for edge_data in self.special_edges:
@@ -73,10 +67,7 @@ class BayesNetwork:
             edges.append(edge_node)
 
             # Build evidence dict
-            self.evidence_dict[edge_node.node_data["identifier"]] = {
-                "evidence": None,
-                "ref": edge_node
-            }
+            self.evidence_dict[edge_node.node_data["identifier"]] = None
 
             # Add connections between edges and vertices
             for vertex_node in vertices:
@@ -141,23 +132,35 @@ class BayesNetwork:
         return deepcopy(self.evidence_dict)
 
     def _update_nodes_given_probs(self):
-        for evidence in self.evidence_dict.values():
-            if evidence["evidence"] is None:
+        # Set evidence to season node
+        season_node = self.network_nodes["season"]
+        season_id = season_node.node_data["identifier"]
+        evidence = self.evidence_dict[season_id]
+        if evidence is not None:
+            season_node.node_data["low"] = 1.0 if evidence == "Low" else 0.0
+            season_node.node_data["medium"] = 1.0 if evidence == "Medium" else 0.0
+            season_node.node_data["high"] = 1.0 if evidence == "High" else 0.0
+            season_node.calculate_given_probs()
+
+        # Set evidence to vertex node
+        for vertex_node in self.network_nodes["vertices"]:
+            if vertex_node.sub_type() == "dummy":
                 continue
-            node = evidence["ref"]
-            if node.type() == "season":
-                node.node_data["low"] = 1.0 if evidence["evidence"] == "Low" else 0.0
-                node.node_data["medium"] = 1.0 if evidence["evidence"] == "Medium" else 0.0
-                node.node_data["high"] = 1.0 if evidence["evidence"] == "High" else 0.0
-            elif node.type() == "vertex":
-                node.node_data["p"] = 1.0 if evidence["evidence"] == "Package" else 0.0
-                node.node_data["q"] = 1.0 if evidence["evidence"] == "No Package" else 0.0
-            elif node.type() == "edge":
-                node.node_data["p"] = 1.0 if evidence["evidence"] == "Blockage" else 0.0
-                node.node_data["q"] = 1.0 if evidence["evidence"] == "No Blockage" else 0.0
-            else:
-                continue
-            node.calculate_given_probs()
+
+            vertex_id = vertex_node.node_data["identifier"]
+            evidence = self.evidence_dict[vertex_id]
+            if evidence is not None:
+                vertex_node.node_data["p"] = 1.0 if evidence == "Package" else 0.0
+                vertex_node.node_data["q"] = 1.0 if evidence == "No Package" else 0.0
+                vertex_node.calculate_given_probs()
+
+        for edge_node in self.network_nodes["edges"]:
+            edge_id = edge_node.node_data["identifier"]
+            evidence = self.evidence_dict[edge_id]
+            if evidence is not None:
+                edge_node.node_data["p"] = 1.0 if evidence == "Blockage" else 0.0
+                edge_node.node_data["q"] = 1.0 if evidence == "No Blockage" else 0.0
+                edge_node.calculate_given_probs()
 
     def probabilistic_reasoning(self, evidence_dict: dict):
         self.evidence_dict = evidence_dict

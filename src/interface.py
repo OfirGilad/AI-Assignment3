@@ -52,7 +52,7 @@ class Interface:
             if self.piece_of_evidence_format[0] in evidence:
                 evidence_params = evidence.split(self.piece_of_evidence_format[0])
                 if evidence_params[0] in ["Low", "Medium", "High"]:
-                    self.evidence_dict["season"]["evidence"] = evidence_params[0]
+                    self.evidence_dict["season"] = evidence_params[0]
                     print("Season evidence has been added.")
                 else:
                     print("Invalid season evidence! Only 'Low', 'Medium' and 'High' are accepted. Please try again.")
@@ -62,7 +62,7 @@ class Interface:
                 evidence_params = evidence.split(self.piece_of_evidence_format[1])
                 if evidence_params[0] in ["Package", "No Package"]:
                     if evidence_params[1] in self.evidence_dict.keys():
-                        self.evidence_dict[evidence_params[1]]["evidence"] = evidence_params[0]
+                        self.evidence_dict[evidence_params[1]] = evidence_params[0]
                         print("Vertex evidence has been added.")
                     else:
                         print("This vertex isn't part of the network! Please try again.")
@@ -74,7 +74,7 @@ class Interface:
                 evidence_params = evidence.split(self.piece_of_evidence_format[2])
                 if evidence_params[0] in ["Blockage", "No Blockage"]:
                     if evidence_params[1] in self.evidence_dict.keys():
-                        self.evidence_dict[evidence_params[1]]["evidence"] = evidence_params[0]
+                        self.evidence_dict[evidence_params[1]] = evidence_params[0]
                         print("Edge evidence has been added.")
                     else:
                         print("This edge isn't part of the network! Please try again.")
