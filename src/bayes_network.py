@@ -89,15 +89,16 @@ class BayesNetwork:
         # print(season_node.network_tree_str())
 
     def bayes_network_structure(self):
+        network_structure_str = "Printing network structure...\n"
         season_node = self.network_nodes["season"]
 
         # Add season node probs to the string
-        network_structure_str = (
+        network_structure_str += "\n"
+        network_structure_str += (
             "SEASON: \n"
             f"  P(low) = {season_node.probs['low']}\n"
             f"  P(medium) = {season_node.probs['medium']}\n"
             f"  P(high) = {season_node.probs['high']}\n"
-            "\n"
         )
 
         for vertex_node in self.network_nodes["vertices"]:
@@ -106,24 +107,24 @@ class BayesNetwork:
 
             # Add vertex node probs to the string
             coords = vertex_node.node_data["identifier"]
+            network_structure_str += "\n"
             network_structure_str += (
                 f"VERTEX {coords}: \n"
                 f"  P(package|low) = {vertex_node.probs['package']['low']}\n"
                 f"  P(package|medium) = {vertex_node.probs['package']['medium']}\n"
                 f"  P(package|high) = {vertex_node.probs['package']['high']}\n"
-                "\n"
             )
 
         for edge_node in self.network_nodes["edges"]:
             # Add edge node probs to the string
             coords1, coords2 = edge_node.node_data["identifier"].split(" ")
+            network_structure_str += "\n"
             network_structure_str += (
                 f"EDGE {coords1} {coords2}: \n"
                 f"  P(blocked|no package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['no package']['no package']}\n"
                 f"  P(blocked|no package {coords1}, package {coords2}) = {edge_node.probs['blocked']['no package']['package']}\n"
                 f"  P(blocked|package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['package']['no package']}\n"
                 f"  P(blocked|package {coords1}, package {coords2}) = {edge_node.probs['blocked']['package']['package']}\n"
-                "\n"
             )
 
         return network_structure_str
@@ -163,17 +164,18 @@ class BayesNetwork:
                 edge_node.calculate_given_probs()
 
     def probabilistic_reasoning(self, evidence_dict: dict):
+        network_infers_str = "Printing probabilistic reasoning results...\n"
         self.evidence_dict = evidence_dict
         self._update_nodes_given_probs()
 
         season_node = self.network_nodes["season"]
         season_node.calculate_infers()
-        network_infers_str = (
+        network_infers_str += "\n"
+        network_infers_str += (
             "SEASON: \n"
             f"  P(low) = {season_node.infers['low']}\n"
             f"  P(medium) = {season_node.infers['medium']}\n"
             f"  P(high) = {season_node.infers['high']}\n"
-            "\n"
         )
 
         for vertex_node in self.network_nodes["vertices"]:
@@ -182,21 +184,21 @@ class BayesNetwork:
                 continue
 
             coords = vertex_node.node_data["identifier"]
+            network_infers_str += "\n"
             network_infers_str += (
                 f"VERTEX {coords}: \n"
                 f"  P(package) = {vertex_node.infers['package']}\n"
                 f"  P(no package) = {vertex_node.infers['no package']}\n"
-                "\n"
             )
 
         for edge_node in self.network_nodes["edges"]:
             edge_node.calculate_infers()
             coords1, coords2 = edge_node.node_data["identifier"].split(" ")
+            network_infers_str += "\n"
             network_infers_str += (
                 f"EDGE {coords1} {coords2}: \n"
                 f"  P(blocked) = {edge_node.infers['blocked']}\n"
                 f"  P(unblocked) = {edge_node.infers['unblocked']}\n"
-                "\n"
             )
 
         return network_infers_str
