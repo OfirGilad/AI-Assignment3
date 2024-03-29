@@ -22,7 +22,7 @@ that receives the parsed input data and build all the network nodes in the follo
 3. Create the `edges` nodes, and set the vertices nodes as their parents
    (using the values from parameters `#B`,`#F`,`#L`).
 
-**Note:** We also create `dummy vertices` nodes (Used for the probabilistic reasoning as suggested in the assignment)
+**Notice:** We also create `dummy vertices` nodes (Used for the probabilistic reasoning as suggested in the assignment)
 which are not part of the input data. 
 
 Each node in the BN is an object of the `Node` class inside the [node.py](src%2Fnode.py),
