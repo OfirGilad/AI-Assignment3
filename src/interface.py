@@ -21,7 +21,9 @@ class Interface:
         ]
 
     def _print_network_structure(self):
-        result = self.bayes_network.bayes_network_structure()
+        cloned_bayes_network = self.bayes_network.clone_bayes_network()
+        cloned_bayes_network.evidence_dict = self.evidence_dict
+        result = cloned_bayes_network.bayes_network_structure()
         print(result)
 
     def _reset_evidence_list(self):

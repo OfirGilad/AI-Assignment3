@@ -89,6 +89,8 @@ class BayesNetwork:
         # print(season_node.network_tree_str())
 
     def bayes_network_structure(self):
+        self._update_nodes_given_probs()
+
         network_structure_str = "Printing network structure...\n"
         season_node = self.network_nodes["season"]
 
