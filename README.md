@@ -103,6 +103,7 @@ To inspect such changes, please choose option `3`.
 
 1. Every edge is fragile and every vertex may contain a package. 
 
+```
 Input:
 
 #X 1                ; Maximum x coordinate
@@ -121,7 +122,8 @@ Input:
 
 #L 0.1              ; Global leakage probability 0.1
 #S 0.5 0.4 0.1      ; Prior distribution over season: 0.5 for low, 0.4 for medium, 0.1 for high
-
+```
+```
 Output:
 
 SEASON: 
@@ -172,9 +174,9 @@ EDGE (1,0) (1,1):
   P(blocked|no package (1,0), package (1,1)) = 0.4
   P(blocked|package (1,0), no package (1,1)) = 0.4
   P(blocked|package (1,0), package (1,1)) = 0.64
-
+```
 2. One third of the edges is fragile and one third is blocked. Every vertex may contain a package.
-
+```
 Input: 
 
 #X 2                ; Maximum x coordinate
@@ -203,9 +205,9 @@ Input:
 
 #L 0.1              ; Global leakage probability 0.1
 #S 0.25 0.25 0.5      ; Prior distribution over season: 0.25 for low, 0.25 for medium, 0.5 for high
+```
 
-
-
+```
 Output:
 
 SEASON: 
@@ -299,9 +301,11 @@ EDGE (1,1) (1,2):
   P(blocked|no package (1,1), package (1,2)) = 1.0
   P(blocked|package (1,1), no package (1,2)) = 1.0
   P(blocked|package (1,1), package (1,2)) = 1.0
+  
 
 EDGE (2,1) (2,2): 
   P(blocked|no package (2,1), no package (2,2)) = 1.0
   P(blocked|no package (2,1), package (2,2)) = 1.0
   P(blocked|package (2,1), no package (2,2)) = 1.0
   P(blocked|package (2,1), package (2,2)) = 1.0
+  ```
