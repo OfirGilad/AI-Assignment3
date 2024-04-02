@@ -19,6 +19,15 @@ class Interface:
             " reported at vertex ",
             " reported at edge ",
         ]
+        self.evidence_values_map = {
+            "Low": "low",
+            "Medium": "medium",
+            "High": "high",
+            "Package": "package",
+            "No Package": "no package",
+            "Blockage": "blocked",
+            "No Blockage": "unblocked"
+        }
 
     def _print_network_structure(self):
         cloned_bayes_network = self.bayes_network.clone_bayes_network()
@@ -54,7 +63,7 @@ class Interface:
             if self.piece_of_evidence_format[0] in evidence:
                 evidence_params = evidence.split(self.piece_of_evidence_format[0])
                 if evidence_params[0] in ["Low", "Medium", "High"]:
-                    self.evidence_dict["season"] = evidence_params[0]
+                    self.evidence_dict["season"] = self.evidence_values_map[evidence_params[0]]
                     print("Season evidence has been added.")
                 else:
                     print("Invalid season evidence! Only 'Low', 'Medium' and 'High' are accepted. Please try again.")
@@ -64,7 +73,7 @@ class Interface:
                 evidence_params = evidence.split(self.piece_of_evidence_format[1])
                 if evidence_params[0] in ["Package", "No Package"]:
                     if evidence_params[1] in self.evidence_dict.keys():
-                        self.evidence_dict[evidence_params[1]] = evidence_params[0]
+                        self.evidence_dict[evidence_params[1]] = self.evidence_values_map[evidence_params[0]]
                         print("Vertex evidence has been added.")
                     else:
                         print("This vertex isn't part of the network! Please try again.")
@@ -76,7 +85,7 @@ class Interface:
                 evidence_params = evidence.split(self.piece_of_evidence_format[2])
                 if evidence_params[0] in ["Blockage", "No Blockage"]:
                     if evidence_params[1] in self.evidence_dict.keys():
-                        self.evidence_dict[evidence_params[1]] = evidence_params[0]
+                        self.evidence_dict[evidence_params[1]] = self.evidence_values_map[evidence_params[0]]
                         print("Edge evidence has been added.")
                     else:
                         print("This edge isn't part of the network! Please try again.")
@@ -93,8 +102,9 @@ class Interface:
 
     def _probabilistic_reasoning(self):
         cloned_bayes_network = self.bayes_network.clone_bayes_network()
-        result = cloned_bayes_network.probabilistic_reasoning(evidence_dict=self.evidence_dict)
-        print(result)
+        # result = cloned_bayes_network.probabilistic_reasoning(evidence_dict=self.evidence_dict)
+        # print(result)
+        cloned_bayes_network.prepare_for_enumeration(evidence_dict=self.evidence_dict)
 
     @staticmethod
     def _quit():

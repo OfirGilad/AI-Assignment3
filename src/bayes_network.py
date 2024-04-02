@@ -15,18 +15,21 @@ class BayesNetwork:
         self.season = environment_data.get("season", dict())
 
         # Build bayes network
+        self.season_node = None
+        self.vertex_nodes = None
+        self.edge_nodes = None
+
         self.network_nodes = dict()
         self.evidence_dict = dict()
         self._build_network()
 
     def _build_network(self):
-        vertices = list()
-        edges = list()
-
-        season_node = Node(node_data=self.season)
+        self.season_node = Node(node_data=self.season)
 
         # Build evidence dict
-        self.evidence_dict[season_node.node_data["identifier"]] = None
+        self.evidence_dict[self.season_node.node_data["identifier"]] = None
+
+        self.vertex_nodes = list()
 
         # Add dummy vertices to the network
         all_vertices = list(list(vertex) for vertex in itertools.product(range(self.X), range(self.Y)))
@@ -42,35 +45,37 @@ class BayesNetwork:
                 "identifier": f"({vertex_coords[0]},{vertex_coords[1]})"
             }
             dummy_vertex_node = Node(node_data=dummy_vertex_data)
-            vertices.append(dummy_vertex_node)
+            self.vertex_nodes.append(dummy_vertex_node)
 
             # Add connections between vertices and season node
-            dummy_vertex_node.add_parent(season_node)
-            season_node.add_child(dummy_vertex_node)
+            dummy_vertex_node.add_parent(self.season_node)
+            self.season_node.add_child(dummy_vertex_node)
 
         # Add vertices to the network
         for vertex_data in self.special_vertices:
             vertex_node = Node(node_data=vertex_data)
-            vertices.append(vertex_node)
+            self.vertex_nodes.append(vertex_node)
 
             # Add connections between vertices and season node
-            vertex_node.add_parent(season_node)
-            season_node.add_child(vertex_node)
+            vertex_node.add_parent(self.season_node)
+            self.season_node.add_child(vertex_node)
 
             # Build evidence dict
             self.evidence_dict[vertex_node.node_data["identifier"]] = None
+
+        self.edge_nodes = list()
 
         # Add edges to the network
         for edge_data in self.special_edges:
             edge_data["leakage_probability"] = self.leakage_probability
             edge_node = Node(node_data=edge_data)
-            edges.append(edge_node)
+            self.edge_nodes.append(edge_node)
 
             # Build evidence dict
             self.evidence_dict[edge_node.node_data["identifier"]] = None
 
             # Add connections between edges and vertices
-            for vertex_node in vertices:
+            for vertex_node in self.vertex_nodes:
                 if edge_node.node_data["from"] == vertex_node.node_data["at"]:
                     vertex_node.add_child(edge_node)
                     edge_node.add_parent(vertex_node)
@@ -80,9 +85,11 @@ class BayesNetwork:
                 else:
                     continue
 
-        self.network_nodes["season"] = season_node
-        self.network_nodes["vertices"] = vertices
-        self.network_nodes["edges"] = edges
+        self.network_nodes["season"] = self.season_node
+        for vertex_node in self.vertex_nodes:
+            self.network_nodes[vertex_node.node_data["identifier"]] = vertex_node
+        for edge_node in self.edge_nodes:
+            self.network_nodes[edge_node.node_data["identifier"]] = edge_node
 
         # TODO: Remove this print before submission
         # print("Network Nodes Structure:")
@@ -92,7 +99,7 @@ class BayesNetwork:
         self._update_nodes_given_probs()
 
         network_structure_str = "Printing network structure...\n"
-        season_node = self.network_nodes["season"]
+        season_node = self.season_node
 
         # Add season node probs to the string
         network_structure_str += "\n"
@@ -103,7 +110,7 @@ class BayesNetwork:
             f"  P(high) = {season_node.probs['high']}\n"
         )
 
-        for vertex_node in self.network_nodes["vertices"]:
+        for vertex_node in self.vertex_nodes:
             if vertex_node.sub_type() == "dummy":
                 continue
 
@@ -117,7 +124,7 @@ class BayesNetwork:
                 f"  P(package|high) = {vertex_node.probs['package']['high']}\n"
             )
 
-        for edge_node in self.network_nodes["edges"]:
+        for edge_node in self.edge_nodes:
             # Add edge node probs to the string
             coords1, coords2 = edge_node.node_data["identifier"].split(" ")
             network_structure_str += "\n"
@@ -136,33 +143,33 @@ class BayesNetwork:
 
     def _update_nodes_given_probs(self):
         # Set evidence to season node
-        season_node = self.network_nodes["season"]
+        season_node = self.season_node
         season_id = season_node.node_data["identifier"]
         evidence = self.evidence_dict[season_id]
         if evidence is not None:
-            season_node.node_data["low"] = 1.0 if evidence == "Low" else 0.0
-            season_node.node_data["medium"] = 1.0 if evidence == "Medium" else 0.0
-            season_node.node_data["high"] = 1.0 if evidence == "High" else 0.0
+            season_node.node_data["low"] = 1.0 if evidence == "low" else 0.0
+            season_node.node_data["medium"] = 1.0 if evidence == "medium" else 0.0
+            season_node.node_data["high"] = 1.0 if evidence == "high" else 0.0
             season_node.calculate_given_probs()
 
         # Set evidence to vertex node
-        for vertex_node in self.network_nodes["vertices"]:
+        for vertex_node in self.vertex_nodes:
             if vertex_node.sub_type() == "dummy":
                 continue
 
             vertex_id = vertex_node.node_data["identifier"]
             evidence = self.evidence_dict[vertex_id]
             if evidence is not None:
-                vertex_node.node_data["p"] = 1.0 if evidence == "Package" else 0.0
-                vertex_node.node_data["q"] = 1.0 if evidence == "No Package" else 0.0
+                vertex_node.node_data["p"] = 1.0 if evidence == "package" else 0.0
+                vertex_node.node_data["q"] = 1.0 if evidence == "no package" else 0.0
                 vertex_node.calculate_given_probs()
 
-        for edge_node in self.network_nodes["edges"]:
+        for edge_node in self.edge_nodes:
             edge_id = edge_node.node_data["identifier"]
             evidence = self.evidence_dict[edge_id]
             if evidence is not None:
-                edge_node.node_data["p"] = 1.0 if evidence == "Blockage" else 0.0
-                edge_node.node_data["q"] = 1.0 if evidence == "No Blockage" else 0.0
+                edge_node.node_data["p"] = 1.0 if evidence == "blocked" else 0.0
+                edge_node.node_data["q"] = 1.0 if evidence == "unblocked" else 0.0
                 edge_node.calculate_given_probs()
 
     def probabilistic_reasoning(self, evidence_dict: dict):
@@ -170,7 +177,7 @@ class BayesNetwork:
         self.evidence_dict = evidence_dict
         self._update_nodes_given_probs()
 
-        season_node = self.network_nodes["season"]
+        season_node = self.season_node
         season_node.calculate_infers()
         network_infers_str += "\n"
         network_infers_str += (
@@ -180,7 +187,7 @@ class BayesNetwork:
             f"  P(high) = {season_node.infers['high']}\n"
         )
 
-        for vertex_node in self.network_nodes["vertices"]:
+        for vertex_node in self.vertex_nodes:
             vertex_node.calculate_infers()
             if vertex_node.sub_type() == "dummy":
                 continue
@@ -193,7 +200,7 @@ class BayesNetwork:
                 f"  P(no package) = {vertex_node.infers['no package']}\n"
             )
 
-        for edge_node in self.network_nodes["edges"]:
+        for edge_node in self.edge_nodes:
             edge_node.calculate_infers()
             coords1, coords2 = edge_node.node_data["identifier"].split(" ")
             network_infers_str += "\n"
@@ -204,6 +211,64 @@ class BayesNetwork:
             )
 
         return network_infers_str
+
+    # TODO: Implement Enumeration
+    def prepare_for_enumeration(self, evidence_dict: dict):
+        self.probabilistic_reasoning(evidence_dict=evidence_dict)
+
+        network_infers_str = ""
+        e = deepcopy(evidence_dict)
+        for key in evidence_dict.keys():
+            if e[key] is None:
+                e.pop(key)
+
+        for X in self.network_nodes.values():
+            bn = {"variables": list(self.network_nodes.keys())}
+            res = self.enumeration_ask(X=X, e=e, bn=bn)
+            if X.node_data["type"] != "season":
+                print(f"{X.node_data['type']} {X.node_data['identifier']} = {res}")
+            else:
+                print(f"{X.node_data['identifier']} = {res}")
+
+        return network_infers_str
+
+    @staticmethod
+    def normalize(Q: dict):
+        sum = 0
+        for key in Q:
+            sum += Q[key]
+        for key in Q:
+            Q[key] /= sum
+        return Q
+
+    def enumeration_ask(self, X: Node, e: dict, bn: dict):
+        Q = {xi: 0 for xi in X.values()}
+        for xi in X.values():
+            cloned_e = deepcopy(e)
+            cloned_e[X.node_data["identifier"]] = xi
+            Q[xi] = self.enumerate_all(variables=bn["variables"], e=cloned_e)
+        return self.normalize(Q)
+
+    def enumerate_all(self, variables: list, e: dict):
+        if len(variables) == 0:
+            return 1.0
+        Y, rest = variables[0], variables[1:]
+        Y_node = self.network_nodes[Y]
+        if Y in list(e.keys()):
+            return Y_node.probability(value=e[Y], evidence=e) * self.enumerate_all(variables=rest, e=e)
+        else:
+            sum = 0
+
+            for i, y in enumerate(list(Y_node.values())):
+                cloned_e = deepcopy(e)
+                cloned_e[Y] = y
+                y_prob = Y_node.probability(value=cloned_e[Y], evidence=cloned_e)
+                rec_res = self.enumerate_all(variables=rest, e=cloned_e)
+                final_res = y_prob * rec_res
+                sum += final_res
+                # print(f"Used: {prob} to returning res {i}: ", rec_result)
+            # print("Sum: ", sum)
+            return sum
 
     def clone_bayes_network(self):
         environment_data = {

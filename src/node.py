@@ -121,3 +121,9 @@ class Node:
 
     def calculate_infers(self):
         self.infers_options_dict[self.type()]()
+
+    def values(self):
+        return self.probs.keys()
+
+    def probability(self, value, evidence):
+        return self.infers[value]
