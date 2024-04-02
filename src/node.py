@@ -6,19 +6,13 @@ class Node:
         self.children = list()
         self.node_data = node_data
 
+        # Node Probabilities
         self.probs_options_dict = {
             "season": self._season_probs,
             "vertex": self._vertex_probs,
             "edge": self._edge_probs,
         }
-        self.infers_options_dict = {
-            "season": self._season_infers,
-            "vertex": self._vertex_infers,
-            "edge": self._edge_infers
-        }
         self.probs = dict()
-        self.infers = dict()
-
         self.calculate_given_probs()
 
     def type(self):
@@ -49,10 +43,6 @@ class Node:
         }
         return self.probs
 
-    def _season_infers(self):
-        self.infers = self.probs
-        return self.infers
-
     def _vertex_probs(self):
         self.probs["package"] = {
             "low": self.node_data["p"],
@@ -65,16 +55,6 @@ class Node:
             "high": 1 - self.probs["package"]["high"]
         }
         return self.probs
-
-    def _vertex_infers(self):
-        season_node = self.parents[0]
-        self.infers["package"] = (
-            (self.probs["package"]["low"] * season_node.infers["low"]) +
-            (self.probs["package"]["medium"] * season_node.infers["medium"]) +
-            (self.probs["package"]["high"] * season_node.infers["high"])
-        )
-        self.infers["no package"] = 1 - self.infers["package"]
-        return self.infers
 
     def _edge_probs(self):
         if self.node_data["p"] == 1.0:
@@ -104,26 +84,29 @@ class Node:
         }
         return self.probs
 
-    def _edge_infers(self):
-        from_vertex_node = self.parents[0]
-        to_vertex_node = self.parents[1]
-
-        self.infers["blocked"] = (
-            (self.probs["blocked"]["package"]["package"] * from_vertex_node.infers["package"] * to_vertex_node.infers["package"]) +
-            (self.probs["blocked"]["package"]["no package"] * from_vertex_node.infers["package"] * to_vertex_node.infers["no package"]) +
-            (self.probs["blocked"]["no package"]["package"] * from_vertex_node.infers["no package"] * to_vertex_node.infers["package"]) +
-            (self.probs["blocked"]["no package"]["no package"] * from_vertex_node.infers["no package"] * to_vertex_node.infers["no package"])
-        )
-        self.infers["unblocked"] = 1 - self.infers["blocked"]
-
     def calculate_given_probs(self):
         self.probs_options_dict[self.type()]()
 
-    def calculate_infers(self):
-        self.infers_options_dict[self.type()]()
-
-    def values(self):
-        return self.probs.keys()
+    def node_values(self):
+        return list(self.probs.keys())
 
     def probability(self, value, evidence):
-        return self.infers[value]
+        if self.type() == "season":
+            # Calculate the probability
+            return self.probs[value]
+        elif self.type() == "vertex":
+            season_node = self.parents[0]
+
+            # Calculate the probability
+            season_evidence = evidence[season_node.node_data["identifier"]]
+            return self.probs[value][season_evidence]
+        elif self.type() == "edge":
+            from_vertex_node = self.parents[0]
+            to_vertex_node = self.parents[1]
+
+            # Calculate the probability
+            from_vertex_evidence = evidence[from_vertex_node.node_data["identifier"]]
+            to_vertex_evidence = evidence[to_vertex_node.node_data["identifier"]]
+            return self.probs[value][from_vertex_evidence][to_vertex_evidence]
+        else:
+            raise ValueError("Invalid node type.")

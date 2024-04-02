@@ -102,9 +102,8 @@ class Interface:
 
     def _probabilistic_reasoning(self):
         cloned_bayes_network = self.bayes_network.clone_bayes_network()
-        # result = cloned_bayes_network.probabilistic_reasoning(evidence_dict=self.evidence_dict)
-        # print(result)
-        cloned_bayes_network.prepare_for_enumeration(evidence_dict=self.evidence_dict)
+        result = cloned_bayes_network.probabilistic_reasoning(evidence_dict=self.evidence_dict)
+        print(result)
 
     @staticmethod
     def _quit():

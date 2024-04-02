@@ -15,6 +15,7 @@ class BayesNetwork:
         self.season = environment_data.get("season", dict())
 
         # Build bayes network
+        self.ordered_variables = list()
         self.season_node = None
         self.vertex_nodes = None
         self.edge_nodes = None
@@ -26,8 +27,10 @@ class BayesNetwork:
     def _build_network(self):
         self.season_node = Node(node_data=self.season)
 
-        # Build evidence dict
-        self.evidence_dict[self.season_node.node_data["identifier"]] = None
+        # Build evidence dict / ordered variables
+        season_id = self.season_node.node_data["identifier"]
+        self.ordered_variables.append(season_id)
+        self.evidence_dict[season_id] = None
 
         self.vertex_nodes = list()
 
@@ -51,6 +54,10 @@ class BayesNetwork:
             dummy_vertex_node.add_parent(self.season_node)
             self.season_node.add_child(dummy_vertex_node)
 
+            # Build evidence dict / ordered variables
+            vertex_id = dummy_vertex_node.node_data["identifier"]
+            self.ordered_variables.append(vertex_id)
+
         # Add vertices to the network
         for vertex_data in self.special_vertices:
             vertex_node = Node(node_data=vertex_data)
@@ -60,8 +67,10 @@ class BayesNetwork:
             vertex_node.add_parent(self.season_node)
             self.season_node.add_child(vertex_node)
 
-            # Build evidence dict
-            self.evidence_dict[vertex_node.node_data["identifier"]] = None
+            # Build evidence dict / ordered variables
+            vertex_id = vertex_node.node_data["identifier"]
+            self.ordered_variables.append(vertex_id)
+            self.evidence_dict[vertex_id] = None
 
         self.edge_nodes = list()
 
@@ -70,9 +79,6 @@ class BayesNetwork:
             edge_data["leakage_probability"] = self.leakage_probability
             edge_node = Node(node_data=edge_data)
             self.edge_nodes.append(edge_node)
-
-            # Build evidence dict
-            self.evidence_dict[edge_node.node_data["identifier"]] = None
 
             # Add connections between edges and vertices
             for vertex_node in self.vertex_nodes:
@@ -85,6 +91,11 @@ class BayesNetwork:
                 else:
                     continue
 
+            # Build evidence dict / ordered variables
+            edge_id = edge_node.node_data["identifier"]
+            self.ordered_variables.append(edge_id)
+            self.evidence_dict[edge_id] = None
+
         self.network_nodes["season"] = self.season_node
         for vertex_node in self.vertex_nodes:
             self.network_nodes[vertex_node.node_data["identifier"]] = vertex_node
@@ -94,52 +105,6 @@ class BayesNetwork:
         # TODO: Remove this print before submission
         # print("Network Nodes Structure:")
         # print(season_node.network_tree_str())
-
-    def bayes_network_structure(self):
-        self._update_nodes_given_probs()
-
-        network_structure_str = "Printing network structure...\n"
-        season_node = self.season_node
-
-        # Add season node probs to the string
-        network_structure_str += "\n"
-        network_structure_str += (
-            "SEASON: \n"
-            f"  P(low) = {season_node.probs['low']}\n"
-            f"  P(medium) = {season_node.probs['medium']}\n"
-            f"  P(high) = {season_node.probs['high']}\n"
-        )
-
-        for vertex_node in self.vertex_nodes:
-            if vertex_node.sub_type() == "dummy":
-                continue
-
-            # Add vertex node probs to the string
-            coords = vertex_node.node_data["identifier"]
-            network_structure_str += "\n"
-            network_structure_str += (
-                f"VERTEX {coords}: \n"
-                f"  P(package|low) = {vertex_node.probs['package']['low']}\n"
-                f"  P(package|medium) = {vertex_node.probs['package']['medium']}\n"
-                f"  P(package|high) = {vertex_node.probs['package']['high']}\n"
-            )
-
-        for edge_node in self.edge_nodes:
-            # Add edge node probs to the string
-            coords1, coords2 = edge_node.node_data["identifier"].split(" ")
-            network_structure_str += "\n"
-            network_structure_str += (
-                f"EDGE {coords1} {coords2}: \n"
-                f"  P(blocked|no package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['no package']['no package']}\n"
-                f"  P(blocked|no package {coords1}, package {coords2}) = {edge_node.probs['blocked']['no package']['package']}\n"
-                f"  P(blocked|package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['package']['no package']}\n"
-                f"  P(blocked|package {coords1}, package {coords2}) = {edge_node.probs['blocked']['package']['package']}\n"
-            )
-
-        return network_structure_str
-
-    def get_evidence_dict(self):
-        return deepcopy(self.evidence_dict)
 
     def _update_nodes_given_probs(self):
         # Set evidence to season node
@@ -172,102 +137,144 @@ class BayesNetwork:
                 edge_node.node_data["q"] = 1.0 if evidence == "unblocked" else 0.0
                 edge_node.calculate_given_probs()
 
-    def probabilistic_reasoning(self, evidence_dict: dict):
-        network_infers_str = "Printing probabilistic reasoning results...\n"
-        self.evidence_dict = evidence_dict
+    def bayes_network_structure(self):
         self._update_nodes_given_probs()
+        network_structure_str = "Printing network structure...\n"
 
+        # Add season node probs to the string
         season_node = self.season_node
-        season_node.calculate_infers()
-        network_infers_str += "\n"
-        network_infers_str += (
+        network_structure_str += "\n"
+        network_structure_str += (
             "SEASON: \n"
-            f"  P(low) = {season_node.infers['low']}\n"
-            f"  P(medium) = {season_node.infers['medium']}\n"
-            f"  P(high) = {season_node.infers['high']}\n"
+            f"  P(low) = {season_node.probs['low']}\n"
+            f"  P(medium) = {season_node.probs['medium']}\n"
+            f"  P(high) = {season_node.probs['high']}\n"
         )
 
+        # Add vertex nodes probs to the string
         for vertex_node in self.vertex_nodes:
-            vertex_node.calculate_infers()
             if vertex_node.sub_type() == "dummy":
                 continue
 
-            coords = vertex_node.node_data["identifier"]
-            network_infers_str += "\n"
-            network_infers_str += (
-                f"VERTEX {coords}: \n"
-                f"  P(package) = {vertex_node.infers['package']}\n"
-                f"  P(no package) = {vertex_node.infers['no package']}\n"
+            vertex_id = vertex_node.node_data["identifier"]
+            network_structure_str += "\n"
+            network_structure_str += (
+                f"VERTEX {vertex_id}: \n"
+                f"  P(package|low) = {vertex_node.probs['package']['low']}\n"
+                f"  P(package|medium) = {vertex_node.probs['package']['medium']}\n"
+                f"  P(package|high) = {vertex_node.probs['package']['high']}\n"
             )
 
+        # Add edge nodes probs to the string
         for edge_node in self.edge_nodes:
-            edge_node.calculate_infers()
-            coords1, coords2 = edge_node.node_data["identifier"].split(" ")
+            edge_id = edge_node.node_data["identifier"]
+            coords1, coords2 = edge_id.split(" ")
+            network_structure_str += "\n"
+            network_structure_str += (
+                f"EDGE {edge_id}: \n"
+                f"  P(blocked|no package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['no package']['no package']}\n"
+                f"  P(blocked|no package {coords1}, package {coords2}) = {edge_node.probs['blocked']['no package']['package']}\n"
+                f"  P(blocked|package {coords1}, no package {coords2}) = {edge_node.probs['blocked']['package']['no package']}\n"
+                f"  P(blocked|package {coords1}, package {coords2}) = {edge_node.probs['blocked']['package']['package']}\n"
+            )
+
+        return network_structure_str
+
+    def get_evidence_dict(self):
+        return deepcopy(self.evidence_dict)
+
+    def probabilistic_reasoning(self, evidence_dict: dict):
+        enumeration_ask_all_results = self.enumeration_ask_all(evidence_dict=evidence_dict)
+        network_infers_str = "Printing probabilistic reasoning results...\n"
+
+        # Add season node infers to the string
+        season_id = self.season_node.node_data["identifier"]
+        network_infers_str += "\n"
+        network_infers_str += (
+            "SEASON: \n"
+            f"  P(low) = {enumeration_ask_all_results[season_id]['low']}\n"
+            f"  P(medium) = {enumeration_ask_all_results[season_id]['medium']}\n"
+            f"  P(high) = {enumeration_ask_all_results[season_id]['high']}\n"
+        )
+
+        # Add vertex nodes infers to the string
+        for vertex_node in self.vertex_nodes:
+            if vertex_node.sub_type() == "dummy":
+                continue
+
+            vertex_id = vertex_node.node_data["identifier"]
             network_infers_str += "\n"
             network_infers_str += (
-                f"EDGE {coords1} {coords2}: \n"
-                f"  P(blocked) = {edge_node.infers['blocked']}\n"
-                f"  P(unblocked) = {edge_node.infers['unblocked']}\n"
+                f"VERTEX {vertex_id}: \n"
+                f"  P(package) = {enumeration_ask_all_results[vertex_id]['package']}\n"
+                f"  P(no package) = {enumeration_ask_all_results[vertex_id]['no package']}\n"
+            )
+
+        # Add edge nodes infers to the string
+        for edge_node in self.edge_nodes:
+            edge_id = edge_node.node_data["identifier"]
+            network_infers_str += "\n"
+            network_infers_str += (
+                f"EDGE {edge_id}: \n"
+                f"  P(blocked) = {enumeration_ask_all_results[edge_id]['blocked']}\n"
+                f"  P(unblocked) = {enumeration_ask_all_results[edge_id]['unblocked']}\n"
             )
 
         return network_infers_str
 
-    # TODO: Implement Enumeration
-    def prepare_for_enumeration(self, evidence_dict: dict):
-        self.probabilistic_reasoning(evidence_dict=evidence_dict)
+    def enumeration_ask_all(self, evidence_dict: dict):
+        results = dict()
 
-        network_infers_str = ""
         e = deepcopy(evidence_dict)
         for key in evidence_dict.keys():
             if e[key] is None:
                 e.pop(key)
 
+        bn = {"variables": list(self.ordered_variables)}
         for X in self.network_nodes.values():
-            bn = {"variables": list(self.network_nodes.keys())}
-            res = self.enumeration_ask(X=X, e=e, bn=bn)
-            if X.node_data["type"] != "season":
-                print(f"{X.node_data['type']} {X.node_data['identifier']} = {res}")
-            else:
-                print(f"{X.node_data['identifier']} = {res}")
+            result = self.enumeration_ask(X=X, e=e, bn=bn)
+            results[X.node_data["identifier"]] = result
 
-        return network_infers_str
+        return results
 
     @staticmethod
     def normalize(Q: dict):
         sum = 0
         for key in Q:
             sum += Q[key]
+
         for key in Q:
             Q[key] /= sum
+
         return Q
 
     def enumeration_ask(self, X: Node, e: dict, bn: dict):
-        Q = {xi: 0 for xi in X.values()}
-        for xi in X.values():
+        Q = {xi: 0 for xi in X.node_values()}
+        for xi in X.node_values():
             cloned_e = deepcopy(e)
             cloned_e[X.node_data["identifier"]] = xi
             Q[xi] = self.enumerate_all(variables=bn["variables"], e=cloned_e)
+
         return self.normalize(Q)
 
     def enumerate_all(self, variables: list, e: dict):
         if len(variables) == 0:
             return 1.0
+
         Y, rest = variables[0], variables[1:]
         Y_node = self.network_nodes[Y]
         if Y in list(e.keys()):
             return Y_node.probability(value=e[Y], evidence=e) * self.enumerate_all(variables=rest, e=e)
         else:
             sum = 0
-
-            for i, y in enumerate(list(Y_node.values())):
+            for i, y in enumerate(Y_node.node_values()):
                 cloned_e = deepcopy(e)
                 cloned_e[Y] = y
-                y_prob = Y_node.probability(value=cloned_e[Y], evidence=cloned_e)
-                rec_res = self.enumerate_all(variables=rest, e=cloned_e)
-                final_res = y_prob * rec_res
-                sum += final_res
-                # print(f"Used: {prob} to returning res {i}: ", rec_result)
-            # print("Sum: ", sum)
+                y_probability = Y_node.probability(value=cloned_e[Y], evidence=cloned_e)
+                recursive_result = self.enumerate_all(variables=rest, e=cloned_e)
+                final_result = y_probability * recursive_result
+                sum += final_result
+
             return sum
 
     def clone_bayes_network(self):
