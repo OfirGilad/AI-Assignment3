@@ -232,8 +232,23 @@ class BayesNetwork:
 
         bn = {"variables": list(self.ordered_variables)}
         for X in self.network_nodes.values():
-            result = self.enumeration_ask(X=X, e=e, bn=bn)
-            results[X.node_data["identifier"]] = result
+            node_id = X.node_data["identifier"]
+
+            # Node is not part of the evidence
+            if node_id not in list(e.keys()):
+                result = self.enumeration_ask(X=X, e=e, bn=bn)
+                results[node_id] = result
+
+            # Node is part of the evidence
+            else:
+                result = dict()
+                evidence_value = evidence_dict[node_id]
+                for node_value in X.node_values():
+                    if node_value == evidence_value:
+                        result[node_value] = 1.0
+                    else:
+                        result[node_value] = 0.0
+                results[node_id] = result
 
         return results
 
