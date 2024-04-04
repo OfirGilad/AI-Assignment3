@@ -191,7 +191,7 @@ class BayesNetwork:
         season_id = self.season_node.node_data["identifier"]
         network_infers_str += "\n"
         network_infers_str += (
-            "SEASON: \n"
+            "SEASON:\n"
             f"  P(low) = {enumeration_ask_all_results[season_id]['low']}\n"
             f"  P(medium) = {enumeration_ask_all_results[season_id]['medium']}\n"
             f"  P(high) = {enumeration_ask_all_results[season_id]['high']}\n"
@@ -205,7 +205,7 @@ class BayesNetwork:
             vertex_id = vertex_node.node_data["identifier"]
             network_infers_str += "\n"
             network_infers_str += (
-                f"VERTEX {vertex_id}: \n"
+                f"VERTEX {vertex_id}:\n"
                 f"  P(package) = {enumeration_ask_all_results[vertex_id]['package']}\n"
                 f"  P(no package) = {enumeration_ask_all_results[vertex_id]['no package']}\n"
             )
@@ -215,7 +215,7 @@ class BayesNetwork:
             edge_id = edge_node.node_data["identifier"]
             network_infers_str += "\n"
             network_infers_str += (
-                f"EDGE {edge_id}: \n"
+                f"EDGE {edge_id}:\n"
                 f"  P(blocked) = {enumeration_ask_all_results[edge_id]['blocked']}\n"
                 f"  P(unblocked) = {enumeration_ask_all_results[edge_id]['unblocked']}\n"
             )

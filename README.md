@@ -76,20 +76,20 @@ The available options are: `0`, `1`, `2`, `3`, `4`, where:
    
    And the results will be printed in the following format:
    ```
-   SEASON: 
+   SEASON:
      P(low) = 0.1
      P(medium) = 0.4
      P(high) = 0.5
-    
-   VERTEX (1,0): 
-     P(package) = 0.4800000000000001
-     P(no package) = 0.5199999999999999
-    
-   EDGE (1,0) (1,1): 
-     P(blocked) = 0.7533760000000002
-     P(unblocked) = 0.24662399999999984
    
-   VERTEX (1,1): 
+   VERTEX (1,0):
+     P(package) = 0.4800000000000001
+     P(no package) = 0.52
+   
+   EDGE (1,0) (1,1):
+     P(blocked) = 0.73912
+     P(unblocked) = 0.26088
+   
+   VERTEX (1,1):
    etc.
    ```
 5. Option `4`: Quits the program.
