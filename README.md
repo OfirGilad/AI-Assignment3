@@ -4,7 +4,8 @@
 
 In order to run the code create a Python environment as follows: \
 `Python3.10` \
-`numpy==1.26.3`
+`numpy==1.26.4` \
+`tqdm==4.66.2`
 
 And to run the project:
 1. open the [main.py](src/main.py) script.

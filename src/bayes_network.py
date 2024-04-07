@@ -1,5 +1,6 @@
 from copy import deepcopy
 import itertools
+from tqdm import tqdm
 
 from node import Node
 
@@ -231,7 +232,7 @@ class BayesNetwork:
                 e.pop(key)
 
         bn = {"variables": list(self.ordered_variables)}
-        for X in self.network_nodes.values():
+        for X in tqdm(self.network_nodes.values()):
             node_id = X.node_data["identifier"]
 
             # Node is not part of the evidence
