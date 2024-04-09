@@ -37,10 +37,10 @@ class Interface:
 
     def _reset_evidence_list(self):
         self.evidence_dict = self.bayes_network.get_evidence_dict()
-        print("Evidence list has been reset to empty.")
+        print("Evidence list has been reset to empty.\n")
 
     def _add_evidence(self):
-        '''
+        """
         Accepted evidence formats:
         - "Low reported at season"
         - "Medium reported at season"
@@ -50,7 +50,7 @@ class Interface:
         - "Blockage reported at edge (0,0) (0,1)"
         - "No Blockage reported at edge (0,0) (0,1)"
         Other formats will fail.
-        '''
+        """
 
         evidence_info = (
             "What piece of evidence do you want to add? (Write 'back' to go back)\n"
@@ -64,9 +64,11 @@ class Interface:
                 evidence_params = evidence.split(self.piece_of_evidence_format[0])
                 if evidence_params[0] in ["Low", "Medium", "High"]:
                     self.evidence_dict["season"] = self.evidence_values_map[evidence_params[0]]
-                    print("Season evidence has been added.")
+                    result_str = "Season evidence has been added."
                 else:
-                    print("Invalid season evidence! Only 'Low', 'Medium' and 'High' are accepted. Please try again.")
+                    result_str = (
+                        "Invalid season evidence! Only 'Low', 'Medium' and 'High' are accepted. Please try again."
+                    )
 
             # Vertex evidence
             elif self.piece_of_evidence_format[1] in evidence:
@@ -74,11 +76,13 @@ class Interface:
                 if evidence_params[0] in ["Package", "No Package"]:
                     if evidence_params[1] in self.evidence_dict.keys():
                         self.evidence_dict[evidence_params[1]] = self.evidence_values_map[evidence_params[0]]
-                        print("Vertex evidence has been added.")
+                        result_str = "Vertex evidence has been added."
                     else:
-                        print("This vertex isn't part of the network! Please try again.")
+                        result_str = "This vertex isn't part of the network! Please try again."
                 else:
-                    print("Invalid vertex evidence! Only 'Package' and 'No Package' are accepted. Please try again.")
+                    result_str = (
+                        "Invalid vertex evidence! Only 'Package' and 'No Package' are accepted. Please try again."
+                    )
 
             # Edge evidence
             elif self.piece_of_evidence_format[2] in evidence:
@@ -86,11 +90,13 @@ class Interface:
                 if evidence_params[0] in ["Blockage", "No Blockage"]:
                     if evidence_params[1] in self.evidence_dict.keys():
                         self.evidence_dict[evidence_params[1]] = self.evidence_values_map[evidence_params[0]]
-                        print("Edge evidence has been added.")
+                        result_str = "Edge evidence has been added."
                     else:
-                        print("This edge isn't part of the network! Please try again.")
+                        result_str = "This edge isn't part of the network! Please try again."
                 else:
-                    print("Invalid edge evidence! Only 'Blockage' and 'No Blockage' are accepted. Please try again.")
+                    result_str = (
+                        "Invalid edge evidence! Only 'Blockage' and 'No Blockage' are accepted. Please try again."
+                    )
 
             # Back to main menu
             elif evidence.lower() == "back":
@@ -98,7 +104,10 @@ class Interface:
 
             # Invalid evidence format
             else:
-                print("Invalid evidence format! Please try again.")
+                result_str = "Invalid evidence format! Please try again."
+
+            result_str += "\n"
+            print(result_str)
 
     def _probabilistic_reasoning(self):
         cloned_bayes_network = self.bayes_network.clone_bayes_network()
@@ -134,4 +143,4 @@ class Interface:
             if user_action is not None:
                 user_action()
             else:
-                print(f"Invalid input: {user_input}! Write either '0','1','2','3' or '4'. \n")
+                print(f"Invalid input: {user_input}! Write either '0','1','2','3' or '4'.\n")
